@@ -1,0 +1,12 @@
+# Core dependencies (always required)
+langgraph>=0.1.0
+langchain-ollama>=0.1.0
+fastapi>=0.110.0
+uvicorn>=0.28.0
+python-multipart>=0.0.9
+pypdf>=4.1.0
+pydantic>=2.6.0
+pillow>=10.2.0
+
+# Optional OCR dependencies (install these only if you want image OCR support)
+# easyocr>=1.7.1

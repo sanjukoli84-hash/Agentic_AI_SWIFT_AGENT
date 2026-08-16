@@ -1,0 +1,944 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SWIFT Extractor & Compliance Reasoning Agent</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Premium Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Marked.js for Markdown Rendering -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #080710;
+            --card-bg: rgba(255, 255, 255, 0.05);
+            --card-border: rgba(255, 255, 255, 0.1);
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --accent-cyan: #06b6d4;
+            --accent-pink: #ec4899;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.15) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(6, 182, 212, 0.15) 0%, transparent 40%);
+        }
+
+        header {
+            padding: 2rem 4rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--card-border);
+            backdrop-filter: blur(12px);
+            background: rgba(8, 7, 16, 0.5);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--text-main) 30%, var(--accent-cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .logo i {
+            background: linear-gradient(135deg, var(--primary), var(--accent-cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 1.8rem;
+        }
+
+        .config-bar {
+            display: flex;
+            gap: 1.5rem;
+            align-items: center;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .input-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 600;
+        }
+
+        select, input[type="text"] {
+            background: rgba(255, 255, 255, 0.07);
+            border: 1px solid var(--card-border);
+            border-radius: 6px;
+            color: var(--text-main);
+            padding: 0.5rem 0.75rem;
+            font-family: inherit;
+            font-size: 0.9rem;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        select:focus, input[type="text"]:focus {
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 10px rgba(6, 182, 212, 0.25);
+        }
+
+        main {
+            flex: 1;
+            padding: 3rem 4rem;
+            max-width: 1400px;
+            width: 100%;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 2.5rem;
+        }
+
+        .hero {
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+
+        .hero h1 {
+            font-size: 2.75rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.02em;
+        }
+
+        .hero p {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Glassmorphic Cards */
+        .glass-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            backdrop-filter: blur(16px);
+            padding: 2rem;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .input-section {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 1rem;
+            border-bottom: 1px solid var(--card-border);
+            padding-bottom: 0.75rem;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .tab-btn.active {
+            color: var(--text-main);
+            background: rgba(255, 255, 255, 0.08);
+            box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.1);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Drag and Drop Zone */
+        .drop-zone {
+            border: 2px dashed var(--card-border);
+            border-radius: 12px;
+            padding: 3rem 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.01);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .drop-zone:hover, .drop-zone.dragover {
+            border-color: var(--accent-cyan);
+            background: rgba(6, 182, 212, 0.03);
+            box-shadow: 0 0 20px rgba(6, 182, 212, 0.05);
+        }
+
+        .drop-zone i {
+            font-size: 3rem;
+            color: var(--primary);
+            transition: transform 0.3s ease;
+        }
+
+        .drop-zone:hover i {
+            transform: translateY(-5px);
+        }
+
+        .drop-zone p {
+            font-size: 1rem;
+            color: var(--text-main);
+        }
+
+        .drop-zone span {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .file-info {
+            display: none;
+            align-items: center;
+            gap: 0.75rem;
+            background: rgba(255, 255, 255, 0.06);
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            border: 1px solid var(--card-border);
+            margin-top: 1rem;
+            width: fit-content;
+        }
+
+        .file-info i {
+            color: var(--accent-cyan);
+        }
+
+        /* Text Area Input */
+        textarea {
+            width: 100%;
+            height: 200px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 1rem;
+            color: var(--text-main);
+            font-family: 'Fira Code', monospace;
+            font-size: 0.9rem;
+            resize: vertical;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        textarea:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 15px rgba(99, 102, 241, 0.15);
+        }
+
+        /* Glow Action Button */
+        .submit-btn {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            padding: 1rem 2rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            width: 100%;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .submit-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: 0.5s;
+        }
+
+        .submit-btn:hover::before {
+            left: 100%;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.6);
+        }
+
+        .submit-btn:disabled {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-muted);
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+
+        /* Real-Time Processing Stepper */
+        .progress-container {
+            display: none;
+            flex-direction: column;
+            gap: 1.5rem;
+            padding: 1.5rem;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+        }
+
+        .progress-step {
+            display: flex;
+            align-items: center;
+            gap: 1.25rem;
+            opacity: 0.5;
+            transition: opacity 0.5s ease;
+        }
+
+        .progress-step.active {
+            opacity: 1;
+        }
+
+        .progress-step.completed {
+            opacity: 1;
+        }
+
+        .step-icon-wrapper {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            position: relative;
+        }
+
+        .progress-step.active .step-icon-wrapper {
+            background: var(--primary);
+            box-shadow: 0 0 10px rgba(99, 102, 241, 0.5);
+        }
+
+        .progress-step.completed .step-icon-wrapper {
+            background: var(--success);
+            color: white;
+        }
+
+        .step-details h4 {
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .step-details p {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .spinner {
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-top: 3px solid white;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Error Alert Box */
+        .error-alert {
+            display: none;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 8px;
+            padding: 1rem 1.5rem;
+            color: #fca5a5;
+            align-items: flex-start;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .error-alert i {
+            font-size: 1.25rem;
+            margin-top: 0.1rem;
+        }
+
+        /* Results Visualization Split Screen */
+        .results-section {
+            display: none;
+            grid-template-columns: 1fr 1.2fr;
+            gap: 2rem;
+            margin-top: 1rem;
+            animation: fadeIn 0.8s ease forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 1024px) {
+            .results-section {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--card-border);
+            padding-bottom: 1rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .results-header h3 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .results-header h3 i {
+            color: var(--accent-cyan);
+        }
+
+        .copy-btn {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid var(--card-border);
+            border-radius: 6px;
+            color: var(--text-main);
+            padding: 0.35rem 0.75rem;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .copy-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        /* JSON Result Styling */
+        .json-wrapper {
+            background: rgba(0, 0, 0, 0.25);
+            border-radius: 8px;
+            padding: 1.25rem;
+            overflow-x: auto;
+            max-height: 500px;
+            border: 1px solid rgba(255, 255, 255, 0.03);
+        }
+
+        .json-wrapper pre {
+            font-family: 'Fira Code', monospace;
+            font-size: 0.85rem;
+            line-height: 1.5;
+        }
+
+        /* Markdown Reasoning Report Styling */
+        .report-wrapper {
+            max-height: 500px;
+            overflow-y: auto;
+            padding-right: 0.5rem;
+            line-height: 1.6;
+        }
+
+        /* Styling markdown contents rendered inside report-wrapper */
+        .report-wrapper h1, .report-wrapper h2, .report-wrapper h3 {
+            margin-top: 1.5rem;
+            margin-bottom: 0.75rem;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .report-wrapper h1 { font-size: 1.5rem; border-bottom: 1px solid var(--card-border); padding-bottom: 0.5rem; }
+        .report-wrapper h2 { font-size: 1.25rem; }
+        .report-wrapper h3 { font-size: 1.1rem; }
+
+        .report-wrapper p {
+            margin-bottom: 1rem;
+            color: #d1d5db;
+        }
+
+        .report-wrapper ul, .report-wrapper ol {
+            margin-left: 1.5rem;
+            margin-bottom: 1rem;
+            color: #d1d5db;
+        }
+
+        .report-wrapper li {
+            margin-bottom: 0.35rem;
+        }
+
+        .report-wrapper blockquote {
+            background: rgba(245, 158, 11, 0.08);
+            border-left: 4px solid var(--warning);
+            padding: 0.75rem 1rem;
+            margin: 1rem 0;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .report-wrapper table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.25rem 0;
+            font-size: 0.9rem;
+        }
+
+        .report-wrapper th, .report-wrapper td {
+            border: 1px solid var(--card-border);
+            padding: 0.75rem;
+            text-align: left;
+        }
+
+        .report-wrapper th {
+            background: rgba(255, 255, 255, 0.05);
+            font-weight: 600;
+        }
+
+        .report-wrapper strong {
+            color: white;
+            font-weight: 600;
+        }
+
+        /* Color classes for JSON rendering */
+        .json-key { color: #f43f5e; }
+        .json-string { color: #10b981; }
+        .json-number { color: #f59e0b; }
+        .json-boolean { color: #3b82f6; }
+        .json-null { color: #6b7280; }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <i class="fa-solid fa-brain"></i>
+            <span>SWIFT Agent</span>
+        </div>
+        <div class="config-bar">
+            <div class="input-group">
+                <span class="input-label">Ollama Host Address</span>
+                <input type="text" id="ollama-url" value="http://localhost:11434" placeholder="http://localhost:11434">
+            </div>
+            <div class="input-group">
+                <span class="input-label">Ollama LLM Model</span>
+                <select id="model-selector">
+                    <option value="llama3.2" selected>llama3.2 (3B - Recommended)</option>
+                    <option value="qwen2.5:3b">qwen2.5:3b (3B)</option>
+                    <option value="mistral">mistral (7B)</option>
+                    <option value="llama3">llama3 (8B)</option>
+                </select>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <section class="hero">
+            <h1>SWIFT Extractor & reasoning agent</h1>
+            <p></p>
+        </section>
+
+        <!-- Main User Input Form Card -->
+        <section class="glass-card input-section">
+            <div class="tabs">
+                <button type="button" class="tab-btn active" id="tab-file-btn" onclick="switchTab('file')">
+                    <i class="fa-solid fa-file-arrow-up"></i> Upload Document
+                </button>
+                <button type="button" class="tab-btn" id="tab-text-btn" onclick="switchTab('text')">
+                    <i class="fa-solid fa-code"></i> Paste Raw SWIFT Text
+                </button>
+            </div>
+
+            <!-- Upload File Tab Content -->
+            <div class="tab-content active" id="tab-file">
+                <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
+                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                    <p>Drag and drop your SWIFT file here, or click to browse</p>
+                    <span>Supports Text (.txt), PDF (.pdf), or Image (.png, .jpg, .jpeg)</span>
+                    <input type="file" id="file-input" style="display: none;" accept=".txt,.pdf,.png,.jpg,.jpeg">
+                </div>
+                <div class="file-info" id="file-info">
+                    <i class="fa-solid fa-file-circle-check"></i>
+                    <span id="file-name-span">No file selected</span>
+                </div>
+            </div>
+
+            <!-- Paste Text Tab Content -->
+            <div class="tab-content" id="tab-text">
+                <textarea id="raw-text-input" placeholder="Paste your raw SWIFT block message here, e.g.
+{1:F01BANKBEBBAXXX...}{2:I103...}{4:
+:20:TXN12345
+:32A:260815USD50000,00
+...
+-}"></textarea>
+            </div>
+
+            <button type="button" class="submit-btn" id="submit-btn" onclick="processSWIFT()">
+                <i class="fa-solid fa-circle-play"></i> Extract and Analyze Message
+            </button>
+
+            <!-- Stepper Progress Tracker -->
+            <div class="progress-container" id="progress-container">
+                <div class="progress-step" id="step-preprocess">
+                    <div class="step-icon-wrapper" id="step-preprocess-icon">1</div>
+                    <div class="step-details">
+                        <h4>Document Preprocessor</h4>
+                        <p id="step-preprocess-desc">Reading file content and extracting SWIFT raw text...</p>
+                    </div>
+                </div>
+                <div class="progress-step" id="step-extract">
+                    <div class="step-icon-wrapper" id="step-extract-icon">2</div>
+                    <div class="step-details">
+                        <h4>SWIFT Extractor Agent (Sub-Agent)</h4>
+                        <p id="step-extract-desc">Parsing raw blocks into structured fields using Ollama...</p>
+                    </div>
+                </div>
+                <div class="progress-step" id="step-reason">
+                    <div class="step-icon-wrapper" id="step-reason-icon">3</div>
+                    <div class="step-details">
+                        <h4>Reasoning & Compliance Agent (Sub-Agent)</h4>
+                        <p id="step-reason-desc">Running compliance checks to find missing tags and transaction failures...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Error Box -->
+            <div class="error-alert" id="error-alert">
+                <i class="fa-solid fa-circle-exclamation"></i>
+                <div id="error-text">An error occurred while processing the request.</div>
+            </div>
+        </section>
+
+        <!-- Agent Output Screen (Appears after submission) -->
+        <section class="results-section" id="results-section">
+            <!-- Left Panel: Extracted Fields -->
+            <div class="glass-card">
+                <div class="results-header">
+                    <h3><i class="fa-solid fa-brackets-curly"></i> Extracted SWIFT Fields</h3>
+                    <button class="copy-btn" onclick="copyJSON()">
+                        <i class="fa-solid fa-copy"></i> Copy JSON
+                    </button>
+                </div>
+                <div class="json-wrapper">
+                    <pre><code id="json-result"></code></pre>
+                </div>
+            </div>
+
+            <!-- Right Panel: Compliance Report -->
+            <div class="glass-card">
+                <div class="results-header">
+                    <h3><i class="fa-solid fa-gavel"></i> Transaction Failure Analysis</h3>
+                    <button class="copy-btn" onclick="copyMarkdown()">
+                        <i class="fa-solid fa-copy"></i> Copy Markdown
+                    </button>
+                </div>
+                <div class="report-wrapper" id="markdown-result">
+                    <!-- Dynamic Markdown Content -->
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        let currentTab = 'file';
+        let selectedFile = null;
+        let finalJSON = '';
+        let finalMarkdown = '';
+
+        // Initialize file input listeners
+        const fileInput = document.getElementById('file-input');
+        const dropZone = document.getElementById('drop-zone');
+        const fileInfo = document.getElementById('file-info');
+        const fileNameSpan = document.getElementById('file-name-span');
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFileSelect(e.target.files[0]);
+            }
+        });
+
+        // Drag and drop events
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                dropZone.classList.add('dragover');
+            }, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('dragover');
+            }, false);
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            if (files.length > 0) {
+                handleFileSelect(files[0]);
+            }
+        });
+
+        function handleFileSelect(file) {
+            selectedFile = file;
+            fileNameSpan.innerText = `${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+            fileInfo.style.display = 'flex';
+        }
+
+        // Switch Tabs
+        function switchTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+
+            if (tab === 'file') {
+                document.getElementById('tab-file-btn').classList.add('active');
+                document.getElementById('tab-file').classList.add('active');
+            } else {
+                document.getElementById('tab-text-btn').classList.add('active');
+                document.getElementById('tab-text').classList.add('active');
+            }
+        }
+
+        // Stepper status helpers
+        function setStepStatus(stepId, status) {
+            const step = document.getElementById(`step-${stepId}`);
+            const iconWrapper = document.getElementById(`step-${stepId}-icon`);
+            const desc = document.getElementById(`step-${stepId}-desc`);
+
+            step.classList.remove('active', 'completed');
+
+            if (status === 'waiting') {
+                iconWrapper.innerHTML = stepId === 'preprocess' ? '1' : (stepId === 'extract' ? '2' : '3');
+            } else if (status === 'active') {
+                step.classList.add('active');
+                iconWrapper.innerHTML = '<div class="spinner"></div>';
+            } else if (status === 'completed') {
+                step.classList.add('completed');
+                iconWrapper.innerHTML = '<i class="fa-solid fa-check"></i>';
+            } else if (status === 'failed') {
+                step.classList.add('active');
+                iconWrapper.style.backgroundColor = 'var(--danger)';
+                iconWrapper.innerHTML = '<i class="fa-solid fa-xmark" style="color: white;"></i>';
+            }
+        }
+
+        // Process request
+        async function processSWIFT() {
+            const submitBtn = document.getElementById('submit-btn');
+            const progressContainer = document.getElementById('progress-container');
+            const errorAlert = document.getElementById('error-alert');
+            const resultsSection = document.getElementById('results-section');
+
+            // Reset states
+            errorAlert.style.display = 'none';
+            resultsSection.style.display = 'none';
+            submitBtn.disabled = true;
+
+            const ollamaUrl = document.getElementById('ollama-url').value;
+            const modelName = document.getElementById('model-selector').value;
+
+            const formData = new FormData();
+            formData.append('model_name', modelName);
+            formData.append('base_url', ollamaUrl);
+
+            if (currentTab === 'file') {
+                if (!selectedFile) {
+                    showError("Please select a file or switch to Paste Text tab.");
+                    submitBtn.disabled = false;
+                    return;
+                }
+                formData.append('file', selectedFile);
+            } else {
+                const textInput = document.getElementById('raw-text-input').value.trim();
+                if (!textInput) {
+                    showError("Please paste a SWIFT message block.");
+                    submitBtn.disabled = false;
+                    return;
+                }
+                formData.append('text', textInput);
+            }
+
+            // Show and start progress
+            progressContainer.style.display = 'flex';
+            setStepStatus('preprocess', 'active');
+            setStepStatus('extract', 'waiting');
+            setStepStatus('reason', 'waiting');
+
+            try {
+                // Step 1: Document preprocessing (Sending request)
+                const response = await fetch('/process', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                setStepStatus('preprocess', 'completed');
+                setStepStatus('extract', 'active');
+
+                // Simulating agent states for smooth UX visual cues
+                await delay(800); 
+
+                if (!response.ok) {
+                    const errData = await response.json();
+                    throw new Error(errData.detail || "Server error while processing SWIFT message.");
+                }
+
+                const result = await response.json();
+
+                // Step 2 Completed
+                if (result.errors && result.errors.length > 0 && (!result.extracted_fields || result.extracted_fields.error)) {
+                    setStepStatus('extract', 'failed');
+                    throw new Error(result.extracted_fields.error || result.errors.join(', '));
+                }
+                setStepStatus('extract', 'completed');
+                setStepStatus('reason', 'active');
+
+                await delay(600);
+
+                // Step 3 Completed
+                setStepStatus('reason', 'completed');
+
+                // Render JSON beautifully
+                finalJSON = JSON.stringify(result.extracted_fields, null, 2);
+                document.getElementById('json-result').innerHTML = syntaxHighlightJson(finalJSON);
+
+                // Render Markdown Report
+                finalMarkdown = result.reasoning_report;
+                document.getElementById('markdown-result').innerHTML = marked.parse(finalMarkdown);
+
+                // Show Results
+                resultsSection.style.display = 'grid';
+                resultsSection.scrollIntoView({ behavior: 'smooth' });
+
+            } catch (error) {
+                showError(error.message);
+                if (document.getElementById('step-preprocess-icon').innerHTML.includes('spinner')) {
+                    setStepStatus('preprocess', 'failed');
+                } else if (document.getElementById('step-extract-icon').innerHTML.includes('spinner')) {
+                    setStepStatus('extract', 'failed');
+                } else {
+                    setStepStatus('reason', 'failed');
+                }
+            } finally {
+                submitBtn.disabled = false;
+            }
+        }
+
+        function showError(message) {
+            const errorAlert = document.getElementById('error-alert');
+            const errorText = document.getElementById('error-text');
+            errorText.innerHTML = message.replace(/\n/g, '<br>');
+            errorAlert.style.display = 'flex';
+        }
+
+        function delay(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        // JSON syntax highlighter utility
+        function syntaxHighlightJson(json) {
+            json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+-]?\d+)?)/g, function (match) {
+                let cls = 'json-number';
+                if (/^"/.test(match)) {
+                    if (/:$/.test(match)) {
+                        cls = 'json-key';
+                    } else {
+                        cls = 'json-string';
+                    }
+                } else if (/true|false/.test(match)) {
+                    cls = 'json-boolean';
+                } else if (/null/.test(match)) {
+                    cls = 'json-null';
+                }
+                return '<span class="' + cls + '">' + match + '</span>';
+            });
+        }
+
+        // Copy utilities
+        function copyJSON() {
+            navigator.clipboard.writeText(finalJSON);
+            alert("JSON copied to clipboard!");
+        }
+
+        function copyMarkdown() {
+            navigator.clipboard.writeText(finalMarkdown);
+            alert("Reasoning report copied to clipboard!");
+        }
+    </script>
+</body>
+</html>
