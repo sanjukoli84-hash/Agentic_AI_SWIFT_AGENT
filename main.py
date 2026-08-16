@@ -9,7 +9,7 @@ from preprocessor import preprocess_document
 from graph import compiled_app
 
 app = FastAPI(
-    title="SWIFT Extractor & reasoning agent POC",
+    title="SWIFT Extractor & reasoning agent",
     description="FastAPI backend serving the LangGraph multi-agent SWIFT auditing system."
 )
 
